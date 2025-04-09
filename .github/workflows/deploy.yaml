@@ -51,7 +51,7 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_PORT }}
           source: "target/persan-api-0.0.1-SNAPSHOT.jar"
-          target: "/var/www/persan-api/persan-api-api/"
+          target: "/var/www/persan-api/persan-api/"
           strip_components: 1  # Enlève le répertoire `target` lors de la copie
           overwrite: true  # Remplace l'ancien JAR
 
@@ -64,9 +64,9 @@ jobs:
           port: ${{ secrets.VPS_PORT }}
           script: |
             echo "Arrêt du service persan-api..."
-            sudo systemctl stop persan-api-api.service || true
+            sudo systemctl stop persan-api.service || true
             sudo systemctl daemon-reload
-            sudo systemctl start persan-api-api.service
-            sudo systemctl status persan-api-api.service --no-pager
+            sudo systemctl start persan-api.service
+            sudo systemctl status persan-api.service --no-pager
             echo "Vérification du statut du service persan-api sur le VPS :"
-            systemctl status persan-api-api.service --no-pager
+            systemctl status persan-api.service --no-pager

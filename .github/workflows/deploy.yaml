@@ -51,9 +51,9 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_PORT }}
           source: "target/persan-api-0.0.1-SNAPSHOT.jar"
-          target: "/var/www/persan-api/persan-api/"
-          strip_components: 1  # Enlève le répertoire `target` lors de la copie
-          overwrite: true  # Remplace l'ancien JAR
+          target: "/var/www/persan/persan-api/"
+          strip_components: 1
+          overwrite: true
 
       - name: Redémarrer l'application sur le VPS
         uses: appleboy/ssh-action@master

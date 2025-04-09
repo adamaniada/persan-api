@@ -11,7 +11,7 @@
 
 ### Configs
 
-- sudo nano /etc/systemd/system/persan-api-api.service
+- sudo nano /etc/systemd/system/persan-api.service
 - bash ````
 [Unit]
 Description=Alliance SMS API Spring Boot Application
@@ -20,28 +20,28 @@ After=network.target
 [Service]
 User=persanAPIUser
 Group=persanAPIUser
-WorkingDirectory=/var/www/persan-api/persan-api-api/
-ExecStart=/usr/bin/java -jar /var/www/persan-api/persan-api-api/persan-api-api-0.0.1-SNAPSHOT.jar
+WorkingDirectory=/var/www/persan-api/persan-api/
+ExecStart=/usr/bin/java -jar /var/www/persan-api/persan-api/persan-api-0.0.1-SNAPSHOT.jar
 SuccessExitStatus=143
 Restart=always
 RestartSec=5
 Environment="SPRING_PROFILES_ACTIVE=dev"
-StandardOutput=append:/var/www/persan-api/persan-api-api/app.log
-StandardError=append:/var/www/persan-api/persan-api-api/error.log
+StandardOutput=append:/var/www/persan-api/persan-api/app.log
+StandardError=append:/var/www/persan-api/persan-api/error.log
 
 ### Sécurisez les permissions sur les fichiers de logs
 
 PermissionsStartOnly=true
-StandardOutput=file:/var/www/persan-api/persan-api-api/app.log
-StandardError=file:/var/www/persan-api/persan-api-api/error.log
+StandardOutput=file:/var/www/persan-api/persan-api/app.log
+StandardError=file:/var/www/persan-api/persan-api/error.log
 
 [Install]
 WantedBy=multi-user.target```
 
 - sudo systemctl daemon-reload
-- sudo systemctl start persan-api-api.service
-- sudo systemctl enable persan-api-api.service
-- sudo systemctl status persan-api-api.service
+- sudo systemctl start persan-api.service
+- sudo systemctl enable persan-api.service
+- sudo systemctl status persan-api.service
 
 ### CONFIGURATION
 
@@ -62,7 +62,7 @@ cat persan_api.pub >> ~/.ssh/authorized_keys
 # Définir les permissions du fichier authorized_keys
 chmod 600 ~/.ssh/authorized_keys
 
-git add . && git commit -m "Commit 1.0.1" && git branch -M main && git push -u origin main
+git add . && git commit -m "Commit 1.0.2" && git branch -M main && git push -u origin main
 ```
 
 ```bash
@@ -73,20 +73,15 @@ After=network.target
 [Service]
 User=persanAPIUser
 Group=persanAPIUser
-WorkingDirectory=/var/www/persan-api/persan-api-api/
-ExecStart=/usr/bin/java -jar /var/www/persan-api/persan-api-api/persan-api-api-0.0.1-SNAPSHOT.jar
+WorkingDirectory=/var/www/persan/persan-api/
+ExecStart=/usr/bin/java -jar /var/www/persan/persan-api/persan-api-0.0.1-SNAPSHOT.jar
 SuccessExitStatus=143
 Restart=always
 RestartSec=5
 Environment="SPRING_PROFILES_ACTIVE=dev"
-StandardOutput=append:/var/www/persan-api/persan-api-api/app.log
-StandardError=append:/var/www/persan-api/persan-api-api/error.log
-
-### Sécurisez les permissions sur les fichiers de logs
-
+StandardOutput=append:/var/www/persan/persan-api/app.log
+StandardError=append:/var/www/persan/persan-api/error.log
 PermissionsStartOnly=true
-StandardOutput=file:/var/www/persan-api/persan-api-api/app.log
-StandardError=file:/var/www/persan-api/persan-api-api/error.log
 
 [Install]
 WantedBy=multi-user.target

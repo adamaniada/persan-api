@@ -41,6 +41,7 @@ public class PestController {
             String imageBase64 = null;
             if (image != null && !image.isEmpty()) {
                 imageBase64 = imageConverterService.convertToBase64(image.getBytes());
+                model.addAttribute("imageBase64", imageBase64); // Add image to model
             }
 
             // Pass the extracted text and/or image to the service

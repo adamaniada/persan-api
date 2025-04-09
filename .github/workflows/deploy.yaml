@@ -1,0 +1,72 @@
+name: Deploy PERSAN API
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v3
+
+      - name: Afficher l'arborescence du répertoire du projet
+        run: |
+          echo "Arborescence du répertoire du projet :"
+          ls -la
+
+      - name: Installer Java et Maven
+        run: |
+          if ! command -v java &> /dev/null; then
+            echo "Java n'est pas installé. Installation en cours..."
+            sudo apt update
+            sudo apt install -y openjdk-17-jdk
+          else
+            echo "Java est déjà installé."
+          fi
+          if ! command -v mvn &> /dev/null; then
+            echo "Maven n'est pas installé. Installation en cours..."
+            sudo apt install -y maven
+          else
+            echo "Maven est déjà installé."
+          fi
+          echo "Versions de Java et Maven :"
+          java -version
+          mvn -v
+
+      - name: Construire le projet
+        run: |
+          mvn clean package -DskipTests
+          echo "Liste des fichiers dans target/ :"
+          ls -la target/
+
+      - name: Transférer le fichier JAR sur le VPS
+        uses: appleboy/scp-action@v0.1.4
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          source: "target/persan-api-api-0.0.1-SNAPSHOT.jar"
+          target: "/var/www/persan-api/persan-api-api/"
+          strip_components: 1  # Enlève le répertoire `target` lors de la copie
+          overwrite: true  # Remplace l'ancien JAR
+
+      - name: Redémarrer l'application sur le VPS
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          script: |
+            echo "Arrêt du service persan-api..."
+            sudo systemctl stop persan-api-api.service || true
+            sudo systemctl daemon-reload
+            sudo systemctl start persan-api-api.service
+            sudo systemctl status persan-api-api.service --no-pager
+            echo "Vérification du statut du service persan-api sur le VPS :"
+            systemctl status persan-api-api.service --no-pager

@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Détection de Nuisibles</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f4f6f8;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 2rem;
+        }
+
+        .form-container {
+            background-color: #fff;
+            padding: 3rem;
+            border-radius: 1rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 600px;
+        }
+
+        .form-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        .form-group {
+            margin-bottom: 2rem;
+        }
+
+        .form-label {
+            display: block;
+            font-weight: 500;
+            color: #555;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-textarea,
+        .form-input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid #ddd;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            color: #333;
+            box-sizing: border-box;
+            transition: border-color 0.2s ease-in-out;
+        }
+
+        .form-textarea:focus,
+        .form-input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.25);
+        }
+
+        .form-textarea {
+            min-height: 6rem;
+        }
+
+        .form-file-input::-webkit-file-upload-button {
+            background-color: #eee;
+            color: #555;
+            border: 1px solid #ddd;
+            border-radius: 0.5rem;
+            padding: 0.6rem 1rem;
+            cursor: pointer;
+            transition: background-color 0.2s ease-in-out;
+        }
+
+        .form-file-input::-webkit-file-upload-button:hover {
+            background-color: #ddd;
+        }
+
+        .form-submit-button {
+            width: 100%;
+            background-color: #3b82f6;
+            color: #fff;
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 0.5rem;
+            font-size: 1.1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out;
+        }
+
+        .form-submit-button:hover {
+            background-color: #2563eb;
+            transform: scale(1.02);
+        }
+
+        .result-container {
+            margin-top: 3rem;
+            padding: 2rem;
+            background-color: #1e293b;
+            color: #f3f4f6;
+            border-radius: 0.75rem;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+            width: 100%; /* Take full width of the parent */
+        }
+
+        .result-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: #cbd5e0;
+            border-bottom: 1px solid #4b5563;
+            padding-bottom: 0.5rem;
+        }
+
+        .result-text {
+            white-space: pre; /* Preserve whitespace and prevent wrapping */
+            overflow-x: auto;
+            max-height: 400px;
+            scrollbar-width: thin;
+            scrollbar-color: #4b5563 #1e293b;
+        }
+
+        .result-text::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .result-text::-webkit-scrollbar-thumb {
+            background-color: #4b5563;
+            border-radius: 4px;
+        }
+
+        .result-text::-webkit-scrollbar-track {
+            background-color: #1e293b;
+            border-radius: 4px;
+        }
+
+        .error-container {
+            margin-top: 2rem;
+            padding: 1.5rem;
+            background-color: #fdecea;
+            color: #dc2626;
+            border-radius: 0.5rem;
+            border: 1px solid #e97474;
+        }
+
+        .error-text {
+            font-weight: 500;
+        }
+
+        .image-preview-container {
+            margin-top: 2rem;
+            border: 1px dashed #ccc;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            text-align: center;
+        }
+
+        .image-preview {
+            max-width: 100%;
+            height: auto;
+            border-radius: 0.25rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="form-container">
+        <h1 class="form-title">Signaler un Nuisible</h1>
+        <form method="post" enctype="multipart/form-data">
+            <div class="form-group">
+                <label for="text" class="form-label">Description (facultatif) :</label>
+                <textarea id="text" name="text" rows="5" class="form-textarea" placeholder="Décrivez le nuisible, son emplacement, etc."></textarea>
+            </div>
+            <div class="form-group">
+                <label for="image" class="form-label">Image (facultatif) :</label>
+                <input type="file" id="image" name="image" accept="image/*" class="form-input form-file-input" onchange="previewImage(event)">
+                <p class="text-gray-500 text-sm mt-1">Formats acceptés : JPG, JPEG, PNG, GIF.</p>
+            </div>
+            <button type="submit" class="form-submit-button">Signaler</button>
+        </form>
+
+        <div th:if="${result != null}" class="result-container">
+            <h2 class="result-title">Analyse du Signalement :</h2>
+            <pre class="result-text" th:text="${result}"></pre>
+        </div>
+
+        <div th:if="${error != null}" class="error-container">
+            <p class="error-text" th:text="${error}"></p>
+        </div>
+
+        <div id="imagePreviewContainer" class="image-preview-container" style="display:none;">
+            <h2 class="result-title">Image Sélectionnée :</h2>
+            <img id="imagePreview" src="#" alt="Aperçu de l'image" class="image-preview">
+        </div>
+    </div>
+
+    <script th:inline="javascript">
+        function previewImage(event) {
+            const input = event.target;
+            const previewContainer = document.getElementById('imagePreviewContainer');
+            const previewImage = document.getElementById('imagePreview');
+
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+
+                reader.onload = function(e) {
+                    previewImage.src = e.target.result;
+                    previewContainer.style.display = 'block';
+                }
+
+                reader.readAsDataURL(input.files[0]);
+            } else {
+                previewImage.src = '#';
+                previewContainer.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>

@@ -62,7 +62,7 @@ cat persan_api.pub >> ~/.ssh/authorized_keys
 # Définir les permissions du fichier authorized_keys
 chmod 600 ~/.ssh/authorized_keys
 
-git add . && git commit -m "Commit 1.0.3" && git branch -M main && git push -u origin main
+git add . && git commit -m "Commit 1.0.4" && git branch -M main && git push -u origin main
 ```
 
 ```bash

@@ -41,9 +41,51 @@ public class GeminiService {
         }
 
         String basePrompt = """
-            Extrais les informations suivantes sous forme de JSON. Clés :
-            nomScientifique, nomCommun, typeNuisible, descriptionMorphologique,
-            descriptionDegats, moyensDissemination, facteursRisque, localisationPossible.
+            Vous êtes un expert en entomologie et dératisation. Analysez rigoureusement les informations fournies (texte et/ou image) pour :
+            
+            1. Extraire UNIQUEMENT les éléments demandés dans ce format JSON EXACT :
+            {
+              "nomScientifique": "(nom binomial latin, obligatoire)",
+              "nomCommun": "[liste en français, anglais, espagnol]",
+              "typeNuisible": "[insecte/rongeur/autre]",
+              "descriptionMorphologique": {
+                "tailleCm": "[fourchette]",
+                "couleur": "[principales]",
+                "caracteristiques": "[antennes, pattes, ailes...]"
+              },
+              "risques": {
+                "sanitaires": "[maladies transmises]",
+                "materiels": "[types de dommages]",
+                "economiques": "[coûts moyens]"
+              },
+              "signesInfestation": "[excréments, traces, nids...]",
+              "conseilsExpert": {
+                "prevention": "[mesures proactives]",
+                "eradication": "[méthodes validées]",
+                "urgence": "[niveau 1-5]"
+              },
+              "certitudeIdentification": "[pourcentage%]"
+            }
+        
+            2. Règles strictes :
+            - Pas de markdown, uniquement du JSON valide
+            - Image prioritaire sur texte en cas de contradiction
+            - Ne rien inventer (mettre "Non applicable" si inconnu)
+            - Unités métriques uniquement
+            - Précision scientifique (ex: "Blattella germanica" pas "cafard")
+        
+            3. Validation :
+            - Vérifier la cohérence taxonomique
+            - Croiser avec la distribution géographique
+            - Corréler caractéristiques morphologiques et comportementales
+        
+            Exemple pour un rongeur :
+            {
+              "nomScientifique": "Rattus norvegicus",
+              "nomCommun": ["rat surmulot", "brown rat", "rata parda"],
+              ...
+              "certitudeIdentification": "95%"
+            }
             """;
         StringBuilder fullPrompt = new StringBuilder(basePrompt);
 

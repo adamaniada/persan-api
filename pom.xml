@@ -24,13 +24,13 @@
     <developers>
         <developer>
             <name>NIADA Adama</name>
-            <email>your.email@example.com</email>
+            <email>email@gmail.com</email>
         </developer>
     </developers>
     <scm>
-        <connection>scm:git:git@github.com:yourusername/persan-api.git</connection>
-        <developerConnection>scm:git:git@github.com:yourusername/persan-api.git</developerConnection>
-        <url>https://github.com/yourusername/persan-api</url>
+        <connection>scm:git:git@github.com:adamaniada/persan-api.git</connection>
+        <developerConnection>scm:git:git@github.com:adamaniada/persan-api.git</developerConnection>
+        <url>https://github.com/adamaniada/persan-api</url>
     </scm>
     <properties>
         <java.version>17</java.version>
@@ -174,11 +174,6 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-thymeleaf</artifactId>
 		</dependency>
-
-		<!-- <dependency>
-			<groupId>org.apache.tomcat.embed</groupId>
-			<artifactId>tomcat-embed-jasper</artifactId>
-		</dependency> -->
     </dependencies>
     <build>
         <plugins>

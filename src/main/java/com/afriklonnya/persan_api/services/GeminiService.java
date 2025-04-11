@@ -2,12 +2,16 @@ package com.afriklonnya.persan_api.services;
 
 import com.afriklonnya.persan_api.config.GeminiConfig;
 import com.afriklonnya.persan_api.exceptions.ApiServiceException;
+import com.afriklonnya.persan_api.exceptions.GeminiServiceException;
+import com.afriklonnya.persan_api.exceptions.InvalidInputException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -29,77 +33,39 @@ public class GeminiService {
     private static final String ERROR_FIELD = "error";
     private static final String MESSAGE_FIELD = "message";
     private final GeminiConfig config;
+    private final ImageConverterService imageConverterService;
     private final ObjectMapper mapper = new ObjectMapper();
 
-    public GeminiService(GeminiConfig config) {
+    @Value("${gemini.prompt.base}")
+    private String basePrompt;
+
+    public GeminiService(GeminiConfig config, ImageConverterService imageConverterService) {
         this.config = config;
+        this.imageConverterService = imageConverterService;
     }
 
-    private String buildPrompt(String text, String imageBase64) throws Exception {
+    private String buildPrompt(String text, String imageBase64) {
         if ((text == null || text.isEmpty()) && (imageBase64 == null || imageBase64.isEmpty())) {
-            throw new IllegalArgumentException("Au moins un texte ou une image doit être fourni.");
+            throw new InvalidInputException("Au moins un texte ou une image doit être fourni.");
         }
 
-        String basePrompt = """
-            Vous êtes un expert en entomologie et dératisation. Analysez rigoureusement les informations fournies (texte et/ou image) pour :
-            
-            1. Extraire UNIQUEMENT les éléments demandés dans ce format JSON EXACT :
-            {
-              "nomScientifique": "(nom binomial latin, obligatoire)",
-              "nomCommun": "[liste en français, anglais, espagnol]",
-              "typeNuisible": "[insecte/rongeur/autre]",
-              "descriptionMorphologique": {
-                "tailleCm": "[fourchette]",
-                "couleur": "[principales]",
-                "caracteristiques": "[antennes, pattes, ailes...]"
-              },
-              "risques": {
-                "sanitaires": "[maladies transmises]",
-                "materiels": "[types de dommages]",
-                "economiques": "[coûts moyens]"
-              },
-              "signesInfestation": "[excréments, traces, nids...]",
-              "conseilsExpert": {
-                "prevention": "[mesures proactives]",
-                "eradication": "[méthodes validées]",
-                "urgence": "[niveau 1-5]"
-              },
-              "certitudeIdentification": "[pourcentage%]"
-            }
-        
-            2. Règles strictes :
-            - Pas de markdown, uniquement du JSON valide
-            - Image prioritaire sur texte en cas de contradiction
-            - Ne rien inventer (mettre "Non applicable" si inconnu)
-            - Unités métriques uniquement
-            - Précision scientifique (ex: "Blattella germanica" pas "cafard")
-        
-            3. Validation :
-            - Vérifier la cohérence taxonomique
-            - Croiser avec la distribution géographique
-            - Corréler caractéristiques morphologiques et comportementales
-        
-            Exemple pour un rongeur :
-            {
-              "nomScientifique": "Rattus norvegicus",
-              "nomCommun": ["rat surmulot", "brown rat", "rata parda"],
-              ...
-              "certitudeIdentification": "95%"
-            }
-            """;
         StringBuilder fullPrompt = new StringBuilder(basePrompt);
 
-        if (text != null && !text.isEmpty()) {
-            String escapedText = mapper.writeValueAsString(text);
-            fullPrompt.append(String.format("\n\nTexte : %s", escapedText));
-            if (imageBase64 != null && !imageBase64.isEmpty()) {
-                fullPrompt.append("\nAnalyse également l'image pour compléter ou confirmer les informations.");
+        try {
+            if (text != null && !text.isEmpty()) {
+                String escapedText = mapper.writeValueAsString(text);
+                fullPrompt.append(String.format("%n%nTexte : %s", escapedText));
+                if (imageBase64 != null && !imageBase64.isEmpty()) {
+                    fullPrompt.append("%nAnalyse également l'image pour compléter ou confirmer les informations.");
+                }
+            } else if (imageBase64 != null && !imageBase64.isEmpty()) {
+                fullPrompt.append("%nAnalyse l'image pour identifier le nuisible et fournir les détails correspondants.");
             }
-        } else if (imageBase64 != null && !imageBase64.isEmpty()) {
-            fullPrompt.append("\nAnalyse l'image pour identifier le nuisible et fournir les détails correspondants.");
-        }
 
-        return mapper.writeValueAsString(fullPrompt.toString());
+            return mapper.writeValueAsString(fullPrompt.toString());
+        } catch (Exception e) {
+            throw new GeminiServiceException("Error building prompt", e);
+        }
     }
 
     private String buildPartsJson(String prompt, String imageBase64) {
@@ -117,46 +83,66 @@ public class GeminiService {
         return "[" + String.join(",", parts) + "]";
     }
 
-    private JsonNode sendGeminiRequest(String requestBody) throws Exception {
+    private JsonNode sendGeminiRequest(String requestBody) {
         logger.debug("Generated requestBody: {}", requestBody);
 
-        HttpClient client = HttpClient.newHttpClient();
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(GEMINI_API_URL))
-                .header("Content-Type", CONTENT_TYPE_HEADER)
-                .header(API_KEY_HEADER, config.getApiKey())
-                .POST(HttpRequest.BodyPublishers.ofString(requestBody))
-                .build();
+        try {
+            HttpClient client = HttpClient.newHttpClient();
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(GEMINI_API_URL))
+                    .header("Content-Type", CONTENT_TYPE_HEADER)
+                    .header(API_KEY_HEADER, config.getApiKey())
+                    .POST(HttpRequest.BodyPublishers.ofString(requestBody))
+                    .build();
 
-        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-        if (logger.isInfoEnabled()) {
-            logger.info("Raw API Response: {}", response.body());
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            if (logger.isInfoEnabled()) {
+                logger.info("Raw API Response: {}", response.body());
+            }
+
+            JsonNode root = mapper.readTree(response.body());
+
+            if (root.has(ERROR_FIELD)) {
+                JsonNode errorNode = root.get(ERROR_FIELD);
+                String errorMessage = errorNode.has(MESSAGE_FIELD) ? errorNode.get(MESSAGE_FIELD).asText() : "Unknown error";
+                throw new ApiServiceException("Erreur de l'API Gemini: " + errorMessage);
+            }
+            return root;
+        } catch (IOException | InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new GeminiServiceException("Communication error with Gemini API", e);
+        } catch (Exception e) {
+            throw new GeminiServiceException("Unexpected error processing Gemini response", e);
         }
-
-        JsonNode root = mapper.readTree(response.body());
-
-        if (root.has(ERROR_FIELD)) {
-            JsonNode errorNode = root.get(ERROR_FIELD);
-            String errorMessage = errorNode.has(MESSAGE_FIELD) ? errorNode.get(MESSAGE_FIELD).asText() : "Unknown error";
-            throw new ApiServiceException("Erreur de l'API Gemini: " + errorMessage);
-        }
-        return root;
     }
 
-    private String extractTextFromResponse(JsonNode root, String rawResponseBody) throws ApiServiceException {
-        if (!root.has(CANDIDATES_FIELD) || !root.get(CANDIDATES_FIELD).isArray() || root.get(CANDIDATES_FIELD).isEmpty()) {
-            throw new ApiServiceException("Réponse de l'API Gemini invalide : Aucun candidat trouvé. Corps de la réponse : " + rawResponseBody);
+    private String extractTextFromResponse(JsonNode root, String rawResponseBody) {
+      try {
+          if (!root.has(CANDIDATES_FIELD)
+              || !root.get(CANDIDATES_FIELD).isArray()
+              || root.get(CANDIDATES_FIELD).isEmpty()) {
+              throw new ApiServiceException("Réponse API invalide : Aucun candidat. Response: " + rawResponseBody);
+          }
+
+          JsonNode candidate = root.get(CANDIDATES_FIELD).get(0);
+          if (!candidate.has(CONTENT_FIELD)
+              || !candidate.get(CONTENT_FIELD).has(PARTS_FIELD)
+              || !candidate.get(CONTENT_FIELD).get(PARTS_FIELD).isArray()
+              || candidate.get(CONTENT_FIELD).get(PARTS_FIELD).isEmpty()) {
+              throw new ApiServiceException("Structure de contenu invalide. Response: " + rawResponseBody);
+          }
+
+          return candidate.get(CONTENT_FIELD).get(PARTS_FIELD).get(0).get(TEXT_FIELD).asText();
+      } catch (ApiServiceException e) {
+          throw new GeminiServiceException("Error processing response", e);
+      }
+  }
+
+    public String generatePestJson(String text, byte[] imageData) {
+        String imageBase64 = null;
+        if (imageData != null && imageData.length > 0) {
+            imageBase64 = imageConverterService.convertToBase64(imageData);
         }
-
-        JsonNode candidate = root.get(CANDIDATES_FIELD).get(0);
-        if (!candidate.has(CONTENT_FIELD) || !candidate.get(CONTENT_FIELD).has(PARTS_FIELD) || !candidate.get(CONTENT_FIELD).get(PARTS_FIELD).isArray() || candidate.get(CONTENT_FIELD).get(PARTS_FIELD).isEmpty()) {
-            throw new ApiServiceException("Réponse de l'API Gemini invalide : Structure de contenu invalide. Corps de la réponse : " + rawResponseBody);
-        }
-
-        return candidate.get(CONTENT_FIELD).get(PARTS_FIELD).get(0).get(TEXT_FIELD).asText();
-    }
-
-    public String generatePestJson(String text, String imageBase64) throws Exception {
         String prompt = buildPrompt(text, imageBase64);
         String partsJson = buildPartsJson(prompt, imageBase64);
         String requestBody = String.format("""

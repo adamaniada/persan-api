@@ -2,7 +2,6 @@ package com.afriklonnya.persan_api.controllers.ui;
 
 import com.afriklonnya.persan_api.exceptions.InvalidRequestException;
 import com.afriklonnya.persan_api.services.GeminiService;
-import com.afriklonnya.persan_api.services.ImageConverterService;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -14,11 +13,9 @@ import org.springframework.web.multipart.MultipartFile;
 public class PestController {
 
     private final GeminiService geminiService;
-    private final ImageConverterService imageConverterService;
 
-    public PestController(GeminiService geminiService, ImageConverterService imageConverterService) {
+    public PestController(GeminiService geminiService) {
         this.geminiService = geminiService;
-        this.imageConverterService = imageConverterService;
     }
 
     @GetMapping("/detect-pest")
@@ -38,14 +35,14 @@ public class PestController {
             }
 
             // Convert image to Base64 if provided
-            String imageBase64 = null;
+            byte[] imageData = null;
             if (image != null && !image.isEmpty()) {
-                imageBase64 = imageConverterService.convertToBase64(image.getBytes());
-                model.addAttribute("imageBase64", imageBase64); // Add image to model
+                imageData = image.getBytes();
+                model.addAttribute("imageBase64", imageData); // Add image to model
             }
 
             // Pass the extracted text and/or image to the service
-            String jsonResponse = geminiService.generatePestJson(text, imageBase64);
+            String jsonResponse = geminiService.generatePestJson(text, imageData);
             model.addAttribute("result", jsonResponse);
         } catch (InvalidRequestException e) {
             model.addAttribute("error", "Erreur : " + e.getMessage());
